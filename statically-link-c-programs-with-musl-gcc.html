@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Statically Link C Programs with musl-gcc &#8211; Guides By Eric</title>
+    <link rel='icon' href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAgklEQVQoz42SQRbEIAhDP31U59Zz8zKbTguCT1kCIYlR7MtdAmDEEiS2lBaXBOwGv+U6SkvbBM5hFAGk20lhAngeqSRZH1sk/X6k9IWGgWQFSK6UVomZW1c+66sR0N2GTYLzzyo9BGw+uAOuEaucu3adpEdDldTEg+2Zrr9GKezP+QNpYBkuAlobTgAAAABJRU5ErkJggg==" type="image/png" />
+    <meta name="viewport" content="width=device-width, initial-scale=0.5"/>
+    <style>      
+    body {
+      margin: 15px auto;
+      max-width: 650px;
+      font-size: 18px;
+      padding: 0 10px;
+    }
+    
+    h1, h2, h3 {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      padding: 0;
+    }
+    
+    h1 {
+      font-size: 24pt;
+    }
+    
+    h2 {
+      font-size: 20pt;
+    }
+    
+    p {
+      margin-bottom: 5px;
+      line-height: 1.6;
+    }
+    
+    a {
+      margin: 0;
+      padding: 0;
+      color: black;
+      text-decoration: none;
+      color: blue;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+    
+    hr {
+      border: 0; 
+      height: 0; 
+      margin-top: 10px;
+      margin-bottom: 10px;
+      padding: 0;
+      border-top: 1px solid rgba(0, 0, 0, 0.08); 
+    }
+    
+    ul {
+      margin-left: 20px;
+      padding: 0;
+    }
+    
+    li {
+      margin: 0;
+      padding: 0;
+    }
+    
+    ul#menu {
+      float: right;
+    }
+
+    ul#menu {
+      padding: 0;
+      margin: 0;
+      display: inline-block;
+    }
+
+    ul#menu li {
+      list-style-type: none;
+      display: inline-block;
+      margin-right: 10px;
+    }
+    
+    textarea {
+      width: 100%;
+    }
+    
+    pre {
+      margin: 0;
+      padding-top: 7px;
+      padding-bottom: 7px;
+      padding-left: 10px;
+      padding-right: 10px;
+      overflow: auto;
+      line-height: 1.3;
+      background: #eeeeee;
+    }
+    
+    code {
+      white-space: pre;
+    }
+    </style>
+    <link href="http://www.ers35.com/statically-link-c-programs-with-musl-gcc.html" rel="canonical"/>
+  </head>
+  <body>
+    <h1><a id="post" href="/statically-link-c-programs-with-musl-gcc.html">Statically Link C Programs with musl-gcc</a></h1>
+
+<p><code>musl-gcc</code> is a wrapper around GCC that uses the <a href="http://www.musl-libc.org/faq.html">musl</a> C standard library implementation to build programs. It is well suited for being linked with other libraries into a single static executable with no shared dependencies.</p>
+
+<h2 id="getting-musl-gcc">Getting <code>musl-gcc</code></h2>
+
+<p>The <a href="https://packages.debian.org/stable/musl-tools">musl-tools</a> package for Debian and Ubuntu provides <code>musl-gcc</code>:</p>
+
+<div><pre class="highlight"><code>$ sudo apt-get install musl-tools
+</code></pre>
+</div>
+
+<p>You can <a href="http://www.musl-libc.org/download.html">build it from source</a> if a package is not available for your system:</p>
+
+<div><pre class="highlight"><code>$ tar -xf musl-*.tar.gz &amp;&amp; cd musl-*
+$ ./configure
+$ make &amp;&amp; sudo make install
+</code></pre>
+</div>
+
+<h2 id="using-musl-gcc">Using <code>musl-gcc</code></h2>
+
+<p>Use <code>musl-gcc</code> in place of <code>gcc</code>. For an autoconf based build, set the $CC variable before the configure script: <code>CC=musl-gcc ./configure</code> Otherwise, append to the end of make: <code>make CC=musl-gcc</code></p>
+
+<p>Here is an example of building the reference interpreter for the <a href="http://www.lua.org/ftp/">Lua programming language</a>:</p>
+
+<div><pre class="highlight"><code>$ tar -xf lua-*.tar.gz &amp;&amp; cd lua-*
+$ make posix CC="gcc -static"
+$ ldd src/lua
+  not a dynamic executable
+$ size src/lua
+   text	   data	    bss	    dec	    hex	filename
+1702439	   7868	   9768	1720075	 1a3f0b	src/lua
+
+$ make posix CC="musl-gcc -static"
+$ ldd src/lua
+    not a dynamic executable
+$ size src/lua
+   text	   data	    bss	    dec	    hex	filename
+ 259675	   1224	   4960	 265859	  40e83	src/lua
+</code></pre>
+</div>
+
+<p>The binary built with musl is nearly 6.5 times smaller.</p>
+
+
+
+  </body>
+</html>
