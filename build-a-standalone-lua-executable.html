@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>Build a Standalone Lua Executable</title>
+	<link rel='icon'
+		href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAgklEQVQoz42SQRbEIAhDP31U59Zz8zKbTguCT1kCIYlR7MtdAmDEEiS2lBaXBOwGv+U6SkvbBM5hFAGk20lhAngeqSRZH1sk/X6k9IWGgWQFSK6UVomZW1c+66sR0N2GTYLzzyo9BGw+uAOuEaucu3adpEdDldTEg+2Zrr9GKezP+QNpYBkuAlobTgAAAABJRU5ErkJggg=="
+		type="image/png">
+	<meta name="viewport" content="width=device-width, initial-scale=0.5">
+	<style>
+		body {
+			margin: 15px auto;
+			max-width: 650px;
+			font-size: 18px;
+			padding: 0 10px;
+		}
+
+		h1,
+		h2,
+		h3 {
+			margin-top: 10px;
+			margin-bottom: 10px;
+			padding: 0;
+		}
+
+		h1 {
+			font-size: 24pt;
+		}
+
+		h2 {
+			font-size: 20pt;
+		}
+
+		p {
+			margin-bottom: 5px;
+			line-height: 1.6;
+		}
+
+		a {
+			margin: 0;
+			padding: 0;
+			color: black;
+			text-decoration: none;
+			color: blue;
+		}
+
+		a:hover {
+			text-decoration: underline;
+		}
+
+		hr {
+			border: 0;
+			height: 0;
+			margin-top: 10px;
+			margin-bottom: 10px;
+			padding: 0;
+			border-top: 1px solid rgba(0, 0, 0, 0.08);
+		}
+
+		ul {
+			margin-left: 20px;
+			padding: 0;
+		}
+
+		li {
+			margin: 0;
+			padding: 0;
+		}
+
+		ul#menu {
+			float: right;
+		}
+
+		ul#menu {
+			padding: 0;
+			margin: 0;
+			display: inline-block;
+		}
+
+		ul#menu li {
+			list-style-type: none;
+			display: inline-block;
+			margin-right: 10px;
+		}
+
+		textarea {
+			width: 100%;
+		}
+
+		pre {
+			margin: 0;
+			padding-top: 7px;
+			padding-bottom: 7px;
+			padding-left: 10px;
+			padding-right: 10px;
+			overflow: auto;
+			line-height: 1.3;
+			background: #eeeeee;
+		}
+
+		code {
+			white-space: pre;
+		}
+	</style>
+	<link href="http://www.ers35.com/build-a-standalone-lua-executable" rel="canonical">
+</head>
+
+<body>
+	<h1><a id="post" href="/build-a-standalone-lua-executable">Build a Standalone Lua Executable</a></h1>
+
+	<p><code>luastatic</code> is a command line tool that builds a standalone executable from a Lua program. The
+		executable runs on systems that do not have Lua installed because Lua is embedded alongside the program. Lua
+		5.1, 5.2, 5.3 and LuaJIT are supported. `luastatic` can be <a
+			href="https://github.com/ers35/luastatic">downloaded from GitHub</a> or <a
+			href="http://luarocks.org/modules/ers35/luastatic">LuaRocks</a>.</p>
+
+	<p>Lua is commonly used as an embeddable scripting language as part of a larger program written in another language.
+		However, Lua can also be the primary language used to implement a program. Programmers using C are accustomed to
+		building an application to a single executable that is distributed to the end user. <code>luastatic</code> does
+		the same for Lua programs.</p>
+
+	<p>Below is a description of the arguments `luastatic` supports:</p>
+	<pre class="highlight"><code>luastatic main.lua[1] require.lua[2] liblua.a[3] module.a[4] -Iinclude/lua[5] [6]
+[1]: The entry point to the Lua program
+[2]: One or more required Lua source files
+[3]: The Lua interpreter static library
+[4]: One or more static libraries for a required Lua binary module
+[5]: The path to the directory containing lua.h
+[6]: Additional arguments are passed to the C compiler
+</code></pre>
+
+	<p>The shell script below shows how to use <code>luastatic</code> to build <a
+			href="http://lua.sqlite.org/index.cgi/artifact/0c08de88e066ef2d">this program</a> for GNU/Linux and Windows.
+		The program uses <a href="https://www.lua.org/">Lua</a>, <a
+			href="http://lua.sqlite.org/index.cgi/home">LuaSQLite3</a>, and <a href="http://sqlite.org/">SQLite3</a>. I
+		tested the script on Ubuntu 15.04.</p>
+	<pre class="highlight"><code>#!/bin/sh
+
+# download build tools (if necessary)
+sudo apt-get install build-essential make mingw-w64 unzip libreadline-dev
+
+# download program dependencies
+wget https://www.lua.org/ftp/lua-5.2.4.tar.gz
+wget https://raw.githubusercontent.com/ers35/luastatic/c810584/luastatic.lua
+wget http://sqlite.org/2016/sqlite-amalgamation-3110100.zip
+wget http://lua.sqlite.org/index.cgi/zip/lsqlite3_fsl09w.zip
+wget http://lua.sqlite.org/index.cgi/raw/examples/simple.lua?name=0c08de88e066ef2d6cf59c4be3d7ce2aa7df32c9 -O simple.lua
+
+# extract dependencies
+tar -xf lua-5.2.4.tar.gz
+unzip sqlite-amalgamation-3110100.zip
+unzip lsqlite3_fsl09w.zip
+
+# create build directories
+mkdir linux windows
+cp simple.lua linux
+cp simple.lua windows
+
+# build Lua for GNU/Linux
+cd lua-5.2.4
+make linux
+mv src/lua ../
+mv src/liblua.a ../linux
+make clean
+# build Lua for Windows
+make mingw CC=x86_64-w64-mingw32-gcc
+mv src/liblua.a ../windows
+cd ../
+
+# build luastatic using itself
+./lua luastatic.lua luastatic.lua linux/liblua.a -Ilua-5.2.4/src
+cp ./luastatic linux
+cp ./luastatic windows
+
+# build SQLite3 for GNU/Linux
+cd sqlite-amalgamation-3110100
+cc -c -O2 sqlite3.c -o sqlite3.o
+ar rcs ../linux/sqlite3.a sqlite3.o
+# build SQLite3 for Windows
+x86_64-w64-mingw32-gcc -c -O2 sqlite3.c -o sqlite3.o
+x86_64-w64-mingw32-ar rcs ../windows/sqlite3.a sqlite3.o
+cd ../
+
+# build LuaSQLite3 for GNU/Linux
+cd lsqlite3_fsl09w
+cc -c -O2 lsqlite3.c -I../sqlite-amalgamation-3110100 -I../lua-5.2.4/src -o lsqlite3.o
+ar rcs ../linux/lsqlite3.a lsqlite3.o
+# build LuaSQLite3 for Windows
+x86_64-w64-mingw32-gcc -c -O2 lsqlite3.c -I../sqlite-amalgamation-3110100 -I../lua-5.2.4/src -o lsqlite3.o
+x86_64-w64-mingw32-ar rcs ../windows/lsqlite3.a lsqlite3.o
+cd ../
+
+# build simple.lua for GNU/Linux
+cd linux
+./luastatic simple.lua liblua.a lsqlite3.a sqlite3.a -I../lua-5.2.4/src -lpthread
+strip simple
+cd ../
+
+# build simple.lua for Windows
+cd windows
+CC=x86_64-w64-mingw32-gcc ./luastatic simple.lua liblua.a lsqlite3.a sqlite3.a -I../lua-5.2.4/src -lpthread
+strip simple.exe
+</code></pre>
+
+	<p><code>luastatic</code> generates the C source file simple.lua.c containing the Lua program and runs the following
+		command to build the executable:</p>
+	<pre class="highlight"><code>cc -Os simple.lua.c lsqlite3.a liblua.a sqlite3.a -rdynamic -lm -ldl -I../lua-5.2.4/src -lpthread -o simple
+</code></pre>
+
+	<p>
+		If you are familiar with C you can read the file simple.lua.c to see the generated calls to the Lua C API.
+
+		If you find a program that <code>luastatic</code> does not build or where the resulting executable does not
+		behave the same as when run with Lua, please <a href="https://github.com/ers35/luastatic/issues">report the
+			issue</a>.
+	</p>
+
+</body>
+
+</html>
